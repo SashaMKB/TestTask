@@ -1,7 +1,9 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 
 public class Main {
@@ -11,20 +13,27 @@ public class Main {
         while (true) {
             int numberOfAirports = 0;
             System.out.println("Enter filter:");
-            String filter = airport.nextLine();
-            enterFilters(filter);
+            String filter = airport.nextLine().replaceAll("'", "\"");
+
             System.out.println("Enter airport:");
             String name = airport.nextLine();
             if (name.contains("!exit")) {
                 break;
             }
             try {
-                reader = new BufferedReader(new FileReader("airports.csv"));
+                reader = new BufferedReader(new FileReader("../airports.csv"));
                 String line;
                 long start = System.currentTimeMillis();
+                int i = 0;
                 while ((line = reader.readLine()) != null) {
-                    if (findAirport(line,name)) {
-                        numberOfAirports += 1;
+                    String[] items = line.split(",");
+                    if (items[1].toLowerCase().startsWith('"' + name.toLowerCase())) {
+                        String modifiedFilter = ExpressionBuilder.createExpression(filter, items);
+                        String[] tokens = ReversePolishNotation.convertToPolish(modifiedFilter);
+                        if (ReversePolishNotation.evaluatePolishNotation(tokens)) {
+                            System.out.println(items[1] + Arrays.toString(items));
+                            numberOfAirports += 1;
+                        }
                     }
                 }
                 long finish = System.currentTimeMillis();
@@ -35,28 +44,5 @@ public class Main {
                 e.printStackTrace();
             }
         }
-    }
-
-    private static boolean findAirport(String line, String name) {
-        boolean isFinded = false;
-        String[] items = line.split(",");
-        if (items[1].toLowerCase().startsWith('"' + name.toLowerCase()) && items[1].toUpperCase().startsWith('"' + name.toUpperCase())) {
-            System.out.println(items[1] + Arrays.toString(items));
-            isFinded = true;
-        }
-        return isFinded;
-    }
-
-    private static boolean enterFilters(String filter) {
-        boolean result = false;
-        String[] filters = filter.split("&");
-        for (String x: filters) {
-            if (x.contains("column")) {
-                if(x.indexOf('>') != -1 || x.indexOf('<') != - 1){
-                    System.out.println("Ok");
-                }
-            }
-        }
-        return result;
     }
 }
